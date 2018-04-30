@@ -1,6 +1,7 @@
 #Requirements
 from Bio import AlignIO
 import itertools
+from operator import itemgetter
 
 def FastaIter(fileloc):
     # 1) Read the fasta file
