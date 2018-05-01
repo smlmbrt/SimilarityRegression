@@ -16,6 +16,12 @@ print('1) Loading Data')
 DataFolder <- paste('DNA/ByFamily', CurrentFamily, 'TrainingData/', sep = '/')
 # Read & parse Y Data
 Y <- read.csv(paste(DataFolder, 'Y_Sims_PctID.csv.gz', sep =''))
+#Transform
+Y$plogis <- plogis(Y$EScoreOverlap)
+Y$qlogis <- qlogis(Y$EScoreOverlap)
+Y$qlogis[Y$qlogis[Y$qlogis == -Inf]] <- -6
+Y$qlogis[Y$qlogis[Y$qlogis == Inf]] <- 6
+
 
 #Weight positive samples 1/freq (or 10x whichever is higher) higher than negative 
 weightmultiplier <- length(Y$EClass)/sum(Y$EClass)
