@@ -1,38 +1,43 @@
+#!/usr/bin/env Rscript
+
 library(caret)
 library(glmnet)
 library(PRROC)
-library(reshape)
 library(ggplot2)
 
 source('SimilarityRegression_HelperFunctions.R')
 
-CurrentFamily <- 'F201_1.97d' 
+CurrentFamily <- 'F026_1.97d' 
 dir.create(paste('DNA/ByFamily', CurrentFamily, 'Models', sep = '/'), showWarnings = FALSE, recursive = TRUE)
-DiagnosticPlots <- T 
 
-CurrentAlpha <- 0
+CurrentAlpha <- 0 #Ridge regression 
 
 print('1) Loading Data')
 DataFolder <- paste('DNA/ByFamily', CurrentFamily, 'TrainingData/', sep = '/')
 # Read & parse Y Data
 Y <- read.csv(paste(DataFolder, 'Y_Sims_PctID.csv.gz', sep =''))
-#Transform
+
+#Possible EScoreOverlap Transforms
 Y$plogis <- plogis(Y$EScoreOverlap)
 Y$qlogis <- qlogis(Y$EScoreOverlap)
-Y$qlogis[Y$qlogis[Y$qlogis == -Inf]] <- -6
-Y$qlogis[Y$qlogis[Y$qlogis == Inf]] <- 6
+Y$qlogis[Y$qlogis == -Inf] <- qlogis(1/32000)
+Y$qlogis[Y$qlogis == Inf] <- qlogis(1- 1/32000)
 
-
-#Weight positive samples 1/freq (or 10x whichever is higher) higher than negative 
+#Weight positive samples 1/freq (or 10x whichever is higher) higher 
+#than negatives because they're usually at a much lower frequency
 weightmultiplier <- length(Y$EClass)/sum(Y$EClass)
 if(weightmultiplier < 10){weightmultiplier <- 10}
 w <- Y$EClass*weightmultiplier
 w[w == 0] <- 1
+
 #Make the EClass a factor for glmnet (Y/N == > EScoreThreshold) 
 Y$EClass <- as.factor(Y$EClass)
 levels(Y$EClass) <- c('N', 'Y')
+#Specify new True Negatives (TN) based on E-Score Overlap less than 0.2
+Y$TN <- as.factor(Y$EScoreOverlap <= 0.2)
+levels(Y$TN) <- c('N', 'Y')
 
-# Read & scale X (predictor) Data
+# Read X (predictor) Data
 X_Data = list()
 X_Data[['PctID']] <- read.csv(paste(DataFolder, 'X_PctID.csv.gz', sep =''), header = T)
 X_Data[['PctID (Smooth3)']] <- read.csv(paste(DataFolder, 'X_PctID_Smooth3.csv.gz', sep =''), header = T)
@@ -40,7 +45,25 @@ X_Data[['AvgB62']] <- read.csv(paste(DataFolder, 'X_AvgB62.csv.gz', sep =''), he
 X_Data[['AvgB62 (Smooth3)']] <-read.csv(paste(DataFolder, 'X_AvgB62_Smooth3.csv.gz', sep =''), header = T)
 X_Data <- lapply(X_Data, convertToMat, 3 ) #Skip first 2 columns (Start at 3rd p1)
 #X_nearZeroVar <- lapply(X_Data, nearZeroVar, saveMetrics= TRUE)
+
+#### Scale X (predictor) Data ####
 X_Data <- lapply(X_Data, scaleMat ) #Scale data
+count <- 0
+for(predictor in names(X_Data)){
+  count <- count + 1
+  u <- as.numeric(attr(X_Data[[predictor]], 'scaled:center'))
+  sd <- as.numeric(attr(X_Data[[predictor]], 'scaled:scale'))
+  
+  if(count == 1){
+    Xscaling <- t(data.frame(c(predictor, 'mean', u)))
+    colnames(Xscaling) <- c('X', 'Stat', colnames(X_Data[[1]]))
+    row.names(Xscaling) <- NULL
+  }else{
+    Xscaling <- rbind(Xscaling, c(predictor, 'mean', u))
+  }
+  Xscaling <- rbind(Xscaling, c(predictor, 'sd', sd))
+}
+write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'))
 
 #Parse Training/Testing Folds
 TestInds <- readLines(paste(DataFolder, 'CVTestIndicies_i0.txt', sep =''))
@@ -268,7 +291,8 @@ for(predictor in names(X_Data)){
   FinalPreds <- cbind(FinalPreds, p)
   colnames(FinalPreds)[colnames(FinalPreds) == 'p'] <- modelname
 }
-FinalPreds <- cbind(FinalPreds, Y[,c('PctID_L', 'PctID_S')])
+FinalPreds <- cbind(FinalPreds, Y[,c('PctID_L', 'PctID_S', 'ArrayLenDifference', 'MultiAlnFlag')])
+write.csv(FinalPreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_FinalModel.csv', sep = '/'))
 
 PRThresholdData[,'Precison_FINAL'] <- NA
 PRThresholdData[,'Recall_FINAL'] <- NA
@@ -289,25 +313,6 @@ for(i in 1:nrow(PRThresholdData)){
   }
 }
 write.csv(PRThresholdData, paste('DNA/ByFamily', CurrentFamily, 'Models/PRThresholdData.csv', sep = '/'), row.names = F)
-
-#### Feature Scaling ####
-count <- 0
-for(predictor in names(X_Data)){
-  count <- count + 1
-  u <- as.numeric(attr(X_Data[[predictor]], 'scaled:center'))
-  sd <- as.numeric(attr(X_Data[[predictor]], 'scaled:scale'))
-  
-  if(count == 1){
-    Xscaling <- t(data.frame(c(predictor, 'mean', u)))
-    colnames(Xscaling) <- c('X', 'Stat', colnames(X_Data[[1]]))
-    row.names(Xscaling) <- NULL
-  }else{
-    Xscaling <- rbind(Xscaling, c(predictor, 'mean', u))
-  }
-  Xscaling <- rbind(Xscaling, c(predictor, 'sd', sd))
-}
-write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'))
-
 #### Coefficents ####
 count <- 0
 for(predictor in names(X_Data)){
