@@ -1,13 +1,21 @@
-#!/usr/bin/env Rscript
+#!/usr/bin/Rscript
+args = commandArgs(trailingOnly=TRUE)
 
+require(methods)
 library(caret)
 library(glmnet)
 library(PRROC)
-library(ggplot2)
 
 source('SimilarityRegression_HelperFunctions.R')
 
-CurrentFamily <- 'F026_1.97d' 
+CurrentFamily <- args[1]
+Cores <- as.integer(args[2])
+if(Cores > 1){
+  print(paste('!Setting up doMC/Paralell (#cores: ', Cores, ')', sep = ''))
+  library(doMC)
+  registerDoMC(Cores)
+}
+
 dir.create(paste('DNA/ByFamily', CurrentFamily, 'Models', sep = '/'), showWarnings = FALSE, recursive = TRUE)
 
 CurrentAlpha <- 0 #Ridge regression 
