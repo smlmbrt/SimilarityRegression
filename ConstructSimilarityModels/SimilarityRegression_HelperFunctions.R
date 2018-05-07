@@ -29,7 +29,7 @@ scaleIQR <- function(mat){
 
 #For Precision-Recall
 curve2maxRecall <- function(c, TargetPrecision){
-  c <- c[order(c[,1], decreasing = T),] #order by max recall 
+  c <- c[order(c[,1], c[,2], decreasing = T),] #order by max recall, then precision
   maxRecall <- NA
   maxRecall_Cutoff <- NA
   tryCatch({c <- c[c[,2] >= TargetPrecision,]
