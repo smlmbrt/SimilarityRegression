@@ -42,8 +42,7 @@ w[w == 0] <- 1
 Y$EClass <- as.factor(Y$EClass)
 levels(Y$EClass) <- c('N', 'Y')
 #Specify new True Negatives (TN) based on E-Score Overlap less than 0.2
-Y$TN <- as.factor(Y$EScoreOverlap <= 0.2)
-levels(Y$TN) <- c('N', 'Y')
+Y$TN <- as.numeric(Y$EScoreOverlap <= 0.2)
 
 # Read X (predictor) Data
 X_Data = list()
@@ -299,24 +298,27 @@ for(predictor in names(X_Data)){
   FinalPreds <- cbind(FinalPreds, p)
   colnames(FinalPreds)[colnames(FinalPreds) == 'p'] <- modelname
 }
-FinalPreds <- cbind(FinalPreds, Y[,c('PctID_L', 'PctID_S', 'ArrayLenDifference', 'MultiAlnFlag')])
+FinalPreds <- cbind(FinalPreds, Y[,c('PctID_L', 'PctID_S', 'ArrayLenDifference', 'MultiAlnFlag', 'TN')])
 write.csv(FinalPreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_FinalModel.csv', sep = '/'))
 
 PRThresholdData[,'Precison_FINAL'] <- NA
 PRThresholdData[,'Recall_FINAL'] <- NA
 PRThresholdData[,'NPV_FINAL'] <- NA
+PRThresholdData[,'NPV_TN'] <- NA
 for(i in 1:nrow(PRThresholdData)){
   row <- PRThresholdData[i,]
   if(is.na(row$Threshold) == FALSE){
     curmodel <- row$Model
-    curpreds <- FinalPreds[,c('Class', curmodel)]
+    curpreds <- FinalPreds[,c('Class', 'TN', curmodel)]
     curpreds <- curpreds[order(curpreds[,curmodel], decreasing = T),]
     curpreds[,curmodel] <- as.numeric(curpreds[,curmodel] >= row$Threshold)
     x <- table(TRUTH = curpreds[,'Class'], PREDICTED = curpreds[,curmodel])
+    x_TN <- table(TRUTH = curpreds[,'TN'], PREDICTED = curpreds[,curmodel])
     tryCatch({
       PRThresholdData[i,'Precison_FINAL'] <- x['1','1']/(x['1','1'] + x['0','1'])
       PRThresholdData[i,'Recall_FINAL'] <- x['1','1']/(x['1','1'] + x['1','0'])
       PRThresholdData[i,'NPV_FINAL'] <- x['0','0']/sum(x[,'0'])
+      PRThresholdData[i,'NPV_TN'] <- x_TN['0','0']/sum(x_TN[,'0'])
     }, error= function(cond){})
   }
 }
