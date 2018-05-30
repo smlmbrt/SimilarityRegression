@@ -40,6 +40,51 @@ curve2maxRecall <- function(c, TargetPrecision){
   return(c(maxRecall, maxRecall_Cutoff))
 }
 
+#Calculate Negative Predictive Value (NPV) and Neagtive Recall for each threshold
+NPVcurve <- function(labels, scores){
+  #Join & Sort Preds
+  preds <- cbind(labels, scores)
+  preds <- preds[order(preds[,2]),]
+  #Calculate total # of Negatives
+  N <- nrow(preds) - sum(preds[,1])
+  #Create Output Data
+  uScores <- unique(preds[,2])
+  p <- matrix(nrow = length(uScores), ncol = 3)
+  colnames(p) <- c('Cutoff', 'NPV', 'NegativeRecall')
+  #Loop through scores
+  i <- 0
+  for(c in uScores){
+    i <- i + 1
+    p[i,'Cutoff'] <- c
+    c.Preds <- preds[preds[,2] <= c,]
+    if(is.matrix(c.Preds)){
+      c.NPV <- (nrow(c.Preds) - sum(c.Preds[,1]))/nrow(c.Preds)
+      p[i, 'NPV'] <- c.NPV
+      c.NegativeRecall <- (nrow(c.Preds) - sum(c.Preds[,1]))/N
+      p[i, 'NegativeRecall'] <- c.NegativeRecall
+    }else if(is.numeric(c.Preds)){
+      p[i, 'NPV'] <- 1 - c.Preds['labels']
+      p[i, 'NegativeRecall'] <- (1 - c.Preds['labels'])/N
+    }
+  }
+  as.data.frame(p)
+}
+
+selectNPVCurveCutoff <- function(npvcurve, npvTarget, positiveThresh = NULL){
+  # 1) Subset threshold below positiveThresh (if given)
+  if(!is.null(positiveThresh)) npvcurve <- npvcurve[npvcurve$Cutoff < positiveThresh,]
+  # 2) Find thresholds above NPV threshold (npvTarget)
+  npvcurve <- npvcurve[npvcurve$NPV >= npvTarget,]
+  # 3) Return the last row (because it's already sorted)
+  if(dim(npvcurve)[1] == 0){
+   result <- c(NA, NA, NA)
+   names(result) <- names(npvcurve)
+  }else{
+    result <- npvcurve[nrow(npvcurve),]
+  }
+  return(as.list(result))
+}
+
 #For Plotting PR-Curves
 library('RColorBrewer')
 cscale = brewer.pal(7, "Set1")

@@ -26,10 +26,10 @@ DataFolder <- paste('DNA/ByFamily', CurrentFamily, 'TrainingData/', sep = '/')
 Y <- read.csv(paste(DataFolder, 'Y_Sims_PctID.csv.gz', sep =''))
 
 #Possible EScoreOverlap Transforms
-Y$plogis <- plogis(Y$EScoreOverlap)
-Y$qlogis <- qlogis(Y$EScoreOverlap)
-Y$qlogis[Y$qlogis == -Inf] <- qlogis(1/32000)
-Y$qlogis[Y$qlogis == Inf] <- qlogis(1- 1/32000)
+#Y$plogis <- plogis(Y$EScoreOverlap)
+#Y$qlogis <- qlogis(Y$EScoreOverlap)
+#Y$qlogis[Y$qlogis == -Inf] <- qlogis(1/32000)
+#Y$qlogis[Y$qlogis == Inf] <- qlogis(1- 1/32000)
 
 #Weight positive samples 1/freq (or 10x whichever is higher) higher 
 #than negatives because they're usually at a much lower frequency
@@ -38,11 +38,11 @@ if(weightmultiplier < 10){weightmultiplier <- 10}
 w <- Y$EClass*weightmultiplier
 w[w == 0] <- 1
 
-#Make the EClass a factor for glmnet (Y/N == > EScoreThreshold) 
+#Make the EClass a factor for glmnet (Y/N > EScoreThreshold) (Highly Similar)
 Y$EClass <- as.factor(Y$EClass)
 levels(Y$EClass) <- c('N', 'Y')
-#Specify new True Negatives (TN) based on E-Score Overlap less than 0.2
-Y$TN <- as.numeric(Y$EScoreOverlap <= 0.2)
+#Specify True Negatives (TN) based on E-Score Overlap less than 0.2 (Amb vs. Dissimilar)
+Y$TN <- as.numeric(Y$EScoreOverlap >= 0.2)
 
 # Read X (predictor) Data
 X_Data = list()
@@ -53,7 +53,7 @@ X_Data[['AvgB62 (Smooth3)']] <-read.csv(paste(DataFolder, 'X_AvgB62_Smooth3.csv.
 X_Data <- lapply(X_Data, convertToMat, 3 ) #Skip first 2 columns (Start at 3rd p1)
 #X_nearZeroVar <- lapply(X_Data, nearZeroVar, saveMetrics= TRUE)
 
-#### Scale X (predictor) Data ####
+#### Scale X (predictor) Data & Output info ####
 X_Data <- lapply(X_Data, scaleMat ) #Scale data
 count <- 0
 for(predictor in names(X_Data)){
@@ -70,7 +70,7 @@ for(predictor in names(X_Data)){
   }
   Xscaling <- rbind(Xscaling, c(predictor, 'sd', sd))
 }
-write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'))
+write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'),)
 
 #Parse Training/Testing Folds
 TestInds <- readLines(paste(DataFolder, 'CVTestIndicies_i0.txt', sep =''))
@@ -205,7 +205,8 @@ for(name in names(cvresults.logistic)[2:length(cvresults.logistic)]){
 #Add some extra info 
 heldoutpreds$ArrayLenDifference <- Y$ArrayLenDifference[heldoutpreds$rowIndex]
 heldoutpreds$MultiAlnFlag <- Y$MultiAlnFlag[heldoutpreds$rowIndex]
-write.csv(heldoutpreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_TestSet.csv', sep = '/'))
+heldoutpreds$TN <- Y$TN[heldoutpreds$rowIndex]
+write.csv(heldoutpreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_TestSet.csv', sep = '/'), row.names = FALSE)
 
 #Plot Regression PR Curve
 wpr <-pr.curve(scores.class0 = heldoutpreds[,methods[1]], weights.class0 = heldoutpreds$EClass, curve = TRUE, 
@@ -213,7 +214,7 @@ wpr <-pr.curve(scores.class0 = heldoutpreds[,methods[1]], weights.class0 = heldo
 AUPRs <- c(wpr$auc.davis.goadrich)
 AUPRs_Labels = c(paste(methods[1], ' (', round(wpr$auc.davis.goadrich, 3), ')', sep = ''))
 count = 0
-for(PRthresh in seq(0.1,0.95,0.05)){
+for(PRthresh in seq(0.05,0.95,0.05)){
   count = count + 1
   c2mr <- curve2maxRecall(wpr$curve, PRthresh)
   if(count == 1){
@@ -230,7 +231,7 @@ for(i in 2:4){
   AUPRs <- c(AUPRs, wpr2$auc.davis.goadrich)
   AUPRs_Labels = c(AUPRs_Labels, paste(methods[i], ' (', round(wpr2$auc.davis.goadrich, 3), ')', sep = ''))
   plot(wpr2, add = TRUE, color = add.alpha(cscale[i], 1))
-  for(PRthresh in seq(0.1,0.95,0.05)){
+  for(PRthresh in seq(0.05,0.95,0.05)){
     c2mr <- curve2maxRecall(wpr2$curve, PRthresh)
     PRThresholdData <- rbind(PRThresholdData, c(methods[i], PRthresh, c2mr[1], c2mr[2]))
   }
@@ -244,7 +245,7 @@ for(method in c('PctID_L', 'PctID_S')){
   AUPRs <- c(AUPRs, wpr2$auc.davis.goadrich)
   AUPRs_Labels = c(AUPRs_Labels, paste(method, ' (', round(wpr2$auc.davis.goadrich, 3), ')', sep = ''))
   plot(wpr2, add = TRUE, color = bs[b])
-  for(PRthresh in seq(0.1,0.95,0.05)){
+  for(PRthresh in seq(0.05,0.95,0.05)){
     c2mr <- curve2maxRecall(wpr2$curve, PRthresh)
     PRThresholdData <- rbind(PRThresholdData, c(method, PRthresh, c2mr[1], c2mr[2]))
   }
@@ -265,7 +266,7 @@ for(i in 5:8){
     AUPRs_Labels = c(AUPRs_Labels, paste(methods[i], ' (', round(wpr2$auc.davis.goadrich, 3), ')', sep = ''))
     plot(wpr2, add = TRUE, color = add.alpha(cscale[i-4], 1))
   }
-  for(PRthresh in seq(0.1,0.95,0.05)){
+  for(PRthresh in seq(0.05,0.95,0.05)){
     c2mr <- curve2maxRecall(wpr2$curve, PRthresh)
     PRThresholdData <- rbind(PRThresholdData, c(methods[i], PRthresh, c2mr[1], c2mr[2]))
   }
@@ -281,6 +282,41 @@ for(method in c('PctID_L', 'PctID_S')){
 legend('bottomleft', inset = 0.2, AUPRs_Labels, lty=c(1,1), lwd=c(2,2), col = c(cscale[1:4], bs), cex = 0.6)
 dev.off()
 
+#### NPV/NegativeRecall Data ####
+count <- 0
+for(method in methods){
+  c.npvcurve <- NPVcurve(heldoutpreds$TN, heldoutpreds[,method])
+  for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
+    count = count + 1
+    #print(paste(method, PRthresh, count))
+    npvinfo <- c(method, PRthresh)
+    #Get LOOCV metrics
+    r <- selectNPVCurveCutoff(c.npvcurve, PRthresh)
+    npvinfo <- c(npvinfo, as.numeric(r[c('NPV', 'NegativeRecall', 'Cutoff')]))
+    #Get FinalModel Stats
+    if(count == 1){
+      #Manually specify DF
+      NPVThresholdData <- data.frame(Model = method,
+                                        NPV_Target = PRthresh,
+                                        NPV_TEST = r$NPV,
+                                        NegativeRecall_TEST = r$NegativeRecall,
+                                        Threshold = r$Cutoff)
+      NPVThresholdData$Model <- as.character(NPVThresholdData$Model)
+    }else{NPVThresholdData <- rbind(NPVThresholdData, npvinfo)}
+  }
+}
+for(method in c('PctID_L', 'PctID_S')){
+  c.npvcurve <- NPVcurve(Y$TN, Y[,method])
+  for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
+    #print(paste(method, PRthresh, count))
+    npvinfo <- c(method, PRthresh)
+    #Get LOOCV metrics
+    r <- selectNPVCurveCutoff(c.npvcurve, PRthresh)
+    npvinfo <- c(npvinfo, as.numeric(r[c('NPV', 'NegativeRecall', 'Cutoff')]))
+    #Get FinalModel Stats
+    NPVThresholdData <- rbind(NPVThresholdData, npvinfo)
+  }
+}
 ######### Final Model ###########
 #### Predictions ####
 print('5) Outputting ModelCoefficents & Final Model Performance Metrics')
@@ -299,12 +335,11 @@ for(predictor in names(X_Data)){
   colnames(FinalPreds)[colnames(FinalPreds) == 'p'] <- modelname
 }
 FinalPreds <- cbind(FinalPreds, Y[,c('PctID_L', 'PctID_S', 'ArrayLenDifference', 'MultiAlnFlag', 'TN')])
-write.csv(FinalPreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_FinalModel.csv', sep = '/'))
+write.csv(FinalPreds, paste('DNA/ByFamily', CurrentFamily, 'Models/Predictions_FinalModel.csv', sep = '/'), row.names = F)
 
+## Positives ##
 PRThresholdData[,'Precison_FINAL'] <- NA
 PRThresholdData[,'Recall_FINAL'] <- NA
-PRThresholdData[,'NPV_FINAL'] <- NA
-PRThresholdData[,'NPV_TN'] <- NA
 for(i in 1:nrow(PRThresholdData)){
   row <- PRThresholdData[i,]
   if(is.na(row$Threshold) == FALSE){
@@ -313,16 +348,33 @@ for(i in 1:nrow(PRThresholdData)){
     curpreds <- curpreds[order(curpreds[,curmodel], decreasing = T),]
     curpreds[,curmodel] <- as.numeric(curpreds[,curmodel] >= row$Threshold)
     x <- table(TRUTH = curpreds[,'Class'], PREDICTED = curpreds[,curmodel])
-    x_TN <- table(TRUTH = curpreds[,'TN'], PREDICTED = curpreds[,curmodel])
     tryCatch({
       PRThresholdData[i,'Precison_FINAL'] <- x['1','1']/(x['1','1'] + x['0','1'])
       PRThresholdData[i,'Recall_FINAL'] <- x['1','1']/(x['1','1'] + x['1','0'])
-      PRThresholdData[i,'NPV_FINAL'] <- x['0','0']/sum(x[,'0'])
-      PRThresholdData[i,'NPV_TN'] <- x_TN['0','0']/sum(x_TN[,'0'])
     }, error= function(cond){})
   }
 }
 write.csv(PRThresholdData, paste('DNA/ByFamily', CurrentFamily, 'Models/PRThresholdData.csv', sep = '/'), row.names = F)
+
+## Negatives ##
+NPVThresholdData[,'NPV_FINAL'] <- NA
+NPVThresholdData[,'NegativeRecall_FINAL'] <- NA
+for(i in 1:nrow(NPVThresholdData)){
+  row <- NPVThresholdData[i,]
+  if(is.na(row$Threshold) == FALSE){
+    curmodel <- row$Model
+    curpreds <- FinalPreds[,c('TN', curmodel)]
+    curpreds[,curmodel] <- as.numeric(curpreds[,curmodel] >= row$Threshold)
+    x <- table(TRUTH = curpreds[,'TN'], PREDICTED = curpreds[,curmodel])
+    #print(x)
+    tryCatch({
+      NPVThresholdData[i,'NPV_FINAL'] <- x['0','0']/(x['0','0'] + x['1','0'])
+      NPVThresholdData[i,'NegativeRecall_FINAL'] <- x['0','0']/(x['0','0'] + x['0','1'])
+    }, error= function(cond){})
+  }
+}
+write.csv(NPVThresholdData, paste('DNA/ByFamily', CurrentFamily, 'Models/NPVThresholdData.csv', sep = '/'), row.names = F)
+
 #### Coefficents ####
 count <- 0
 for(predictor in names(X_Data)){
@@ -342,3 +394,4 @@ for(predictor in names(X_Data)){
   }
 }
 write.csv(as.matrix(CoefMat), paste('DNA/ByFamily', CurrentFamily, 'Models/ModelCoefficents.csv', sep = '/'))
+
