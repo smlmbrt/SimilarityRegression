@@ -25,11 +25,11 @@ DataFolder <- paste('DNA/ByFamily', CurrentFamily, 'TrainingData/', sep = '/')
 # Read & parse Y Data
 Y <- read.csv(paste(DataFolder, 'Y_Sims_PctID.csv.gz', sep =''))
 
-#Possible EScoreOverlap Transforms
+### Possible EScoreOverlap Transforms ###
 #Y$plogis <- plogis(Y$EScoreOverlap)
 #Y$qlogis <- qlogis(Y$EScoreOverlap)
-#Y$qlogis[Y$qlogis == -Inf] <- qlogis(1/32000)
-#Y$qlogis[Y$qlogis == Inf] <- qlogis(1- 1/32000)
+#Y$qlogis[Y$qlogis == -Inf] <- qlogis(1/32000) #32k based on the number of k-mers
+#Y$qlogis[Y$qlogis == Inf] <- qlogis(1- 1/32000) #32k based on the number of k-mers
 
 #Weight positive samples 1/freq (or 10x whichever is higher) higher 
 #than negatives because they're usually at a much lower frequency
@@ -70,7 +70,7 @@ for(predictor in names(X_Data)){
   }
   Xscaling <- rbind(Xscaling, c(predictor, 'sd', sd))
 }
-write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'),)
+write.csv(Xscaling, paste('DNA/ByFamily', CurrentFamily, 'Models/Xscales.csv', sep = '/'))
 
 #Parse Training/Testing Folds
 TestInds <- readLines(paste(DataFolder, 'CVTestIndicies_i0.txt', sep =''))
@@ -89,7 +89,7 @@ fitControl <- trainControl(
   method = "cv",
   #Use TrainInds (Leave-One-Construct-Out CV)
   index = TrainInds,
-  verboseIter = T,
+  verboseIter = F,
   selectionFunction = 'oneSE',
   savePredictions = 'final'
 )
@@ -130,7 +130,7 @@ print('3a) Specify Caret fit control')
 fitControl <- trainControl(## LOCO
   method = "cv",
   index = TrainInds,
-  verboseIter = T,
+  verboseIter = F,
   classProbs = T,
   summaryFunction = mnLogLoss,
   selectionFunction = 'oneSE',
@@ -240,7 +240,8 @@ bs <- c('black', 'grey')
 b = 0
 for(method in c('PctID_L', 'PctID_S')){
   b <- b + 1
-  wpr2 <- pr.curve(scores.class0 =  Y[,method], weights.class0 = as.numeric(Y$EClass)-1, curve = TRUE, 
+  wpr2 <- pr.curve(scores.class0 =  Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),method], 
+                   weights.class0 = as.numeric(Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)), 'EClass'])-1, curve = TRUE, 
                    max.compute = T, min.compute = T, rand.compute = T)
   AUPRs <- c(AUPRs, wpr2$auc.davis.goadrich)
   AUPRs_Labels = c(AUPRs_Labels, paste(method, ' (', round(wpr2$auc.davis.goadrich, 3), ')', sep = ''))
@@ -274,7 +275,8 @@ for(i in 5:8){
 b = 0
 for(method in c('PctID_L', 'PctID_S')){
   b <- b + 1
-  wpr2 <- pr.curve(scores.class0 =  Y[,method], weights.class0 = as.numeric(Y$EClass)-1, curve = TRUE, 
+  wpr2 <- pr.curve(scores.class0 =  Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),method], 
+                   weights.class0 = as.numeric(Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)), 'EClass'])-1, curve = TRUE, 
                    max.compute = T, min.compute = T, rand.compute = T)
   AUPRs_Labels = c(AUPRs_Labels, paste(method, ' (', round(wpr2$auc.davis.goadrich, 3), ')', sep = ''))
   plot(wpr2, add = TRUE, color = bs[b])
@@ -285,7 +287,8 @@ dev.off()
 #### NPV/NegativeRecall Data ####
 count <- 0
 for(method in methods){
-  c.npvcurve <- NPVcurve(heldoutpreds$TN, heldoutpreds[,method])
+  c.npvcurve <- NPVcurve(heldoutpreds$TN, 
+                         heldoutpreds[, method])
   for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
     count = count + 1
     #print(paste(method, PRthresh, count))
@@ -306,7 +309,8 @@ for(method in methods){
   }
 }
 for(method in c('PctID_L', 'PctID_S')){
-  c.npvcurve <- NPVcurve(Y$TN, Y[,method])
+  c.npvcurve <- NPVcurve(Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),'TN'], 
+  						 Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),method])
   for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
     #print(paste(method, PRthresh, count))
     npvinfo <- c(method, PRthresh)
