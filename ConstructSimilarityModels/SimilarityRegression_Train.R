@@ -289,7 +289,7 @@ count <- 0
 for(method in methods){
   c.npvcurve <- NPVcurve(heldoutpreds$TN, 
                          heldoutpreds[, method])
-  for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
+  for(PRthresh in c(seq(0.75,0.89,0.05), seq(0.9,1,0.01))){
     count = count + 1
     #print(paste(method, PRthresh, count))
     npvinfo <- c(method, PRthresh)
@@ -311,7 +311,7 @@ for(method in methods){
 for(method in c('PctID_L', 'PctID_S')){
   c.npvcurve <- NPVcurve(Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),'TN'], 
   						 Y[(Y$MID_x %in% names(TrainInds)) & (Y$MID_y %in% names(TrainInds)),method])
-  for(PRthresh in c(seq(.75,0.89,0.05), seq(0.9,1,0.01))){
+  for(PRthresh in c(seq(0.75,0.89,0.05), seq(0.9,1,0.01))){
     #print(paste(method, PRthresh, count))
     npvinfo <- c(method, PRthresh)
     #Get LOOCV metrics
