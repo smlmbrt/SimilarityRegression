@@ -20,10 +20,10 @@ def ReadSRModel(filename):
         srmodel['Threshold.Dis'] = None
     return(srmodel)
     
-def ScoreAlignmentResult(resultDict, scoreDict):
+def ScoreAlignmentResult(resultDict, scoreDict, applyidenticalRule = True):
     #Score The Sequence
     if scoreDict['Model.Class'] == 'SequenceIdentity':
-        Score = resultDict[scoreDict['ModelName']]
+        Score = resultDict[scoreDict['Model.Name']]
     else:
         SRweights = scoreDict['SR.Weights']
         #Get postional scores
@@ -47,4 +47,9 @@ def ScoreAlignmentResult(resultDict, scoreDict):
     if scoreDict['Threshold.Dis'] != None:
         if Score < scoreDict['Threshold.Dis']:
             Classification = 'Dis'
+    #Check if 100% identical (gets rid of proteins w/ truncations)
+    if (applyidenticalRule == True) and (resultDict['PctID_L'] == 1):
+        Score = 1
+        Classification = 'HSim'
+    
     return(Score, Classification)
