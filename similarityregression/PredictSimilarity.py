@@ -49,7 +49,6 @@ def ScoreAlignmentResult(resultDict, scoreDict, applyidenticalRule = True):
             Classification = 'Dis'
     #Check if 100% identical (gets rid of proteins w/ truncations)
     if (applyidenticalRule == True) and (resultDict['PctID_L'] == 1):
-        Score = 1
         Classification = 'HSim'
     
     return(Score, Classification)
