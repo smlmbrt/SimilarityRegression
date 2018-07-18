@@ -6,6 +6,16 @@ def ReturnBlossum62Dict():
         subMat[p[::-1]] = v
     return(subMat)
 
+def Blossum62Score(pair, mat):
+    try:
+        return mat[pair]
+    except:
+        import itertools
+        aas = set(itertools.chain(*mat.keys()))
+        for i, aa in enumerate(pair):
+            if aa not in aas:
+                pair[i] = 'X' #Replace with UNKNOWN AA
+        return mat[pair]
 
 def AlnmtPctID(aln_x, aln_y):
     match = 0
@@ -58,14 +68,14 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
                         L_LNG = seg_L[LastNonGapPos]
                         S_LNG = seg_S[LastNonGapPos]
                         if (L_LNG != '-') and (S_LNG != '-'):
-                            window_Score += subMat[(L_LNG,S_LNG)]
+                            window_Score += Blossum62Score((L_LNG,S_LNG), subMat)
                             if L_LNG == S_LNG:
                                 window_ID += 1
                     LastNonGapPos = pos #Set for the next iteration
                     
                     #Check Current Position for matches
                     if (sx != '-') and (sy != '-'):
-                        window_Score += subMat[(sx,sy)]
+                        window_Score += Blossum62Score((sx,sy), subMat)
                         if sx == sy:
                             window_ID += 1
                             
@@ -82,7 +92,7 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
                         L_NP = seg_L[nextpos]
                         S_NP = seg_S[nextpos]
                         if (L_NP != '-') and (S_NP != '-'):
-                            window_Score += subMat[(L_NP,S_NP)]
+                            window_Score += Blossum62Score((L_NP,S_NP), subMat)
                             if L_NP == S_NP:
                                 window_ID += 1
                     
@@ -103,7 +113,7 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
                 if (sx != '-') and (sy != '-'):
                     if sx == sy:
                         AAPercIdentityVect[pos] += 1
-                    posScore = subMat[(sx,sy)]
+                    posScore = Blossum62Score((sx,sy), subMat)
                     AAAvgScoreVect[pos] += posScore
                     #if posScore > AAMaxScoreVect[pos]:
                     #    AAMaxScoreVect[pos] = posScore

@@ -66,6 +66,7 @@ def SeqDictIterator_XoverY(mdict, pdict):
             yield(m, p)
 
 def SeqDictIterator_XoverX(pdict):
+    import itertools
     for seq_i, seq_j in itertools.combinations(pdict.keys(),2):
         ids_i = pdict[seq_i]
         ids_j = pdict[seq_j]
