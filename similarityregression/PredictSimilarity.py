@@ -105,6 +105,7 @@ def AlignAndScore_DictPairs(t, OutputClasses = ['HSim', 'Dis']):
 
 def SeqDictIterator_ParseIdentical2Results(d):
     results = []
+    import itertools
     for ids in d.values():
         for i, j in itertools.combinations(ids, 2):
             if i < j:
