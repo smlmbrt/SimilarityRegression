@@ -34,7 +34,6 @@ def AlnmtPctID(aln_x, aln_y):
 
 def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, subMat = ReturnBlossum62Dict()):
     DBDAlignmentLength = len(aln_l[0])
-    
     numsegments = float(len(aln_l))
     if Norm == 'S':
         numsegments = 0
@@ -54,7 +53,10 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
         for i in range(0, len(aln_l)):
             seg_L = aln_l[i]
             seg_S = aln_s[i]
-
+            
+            if (set(seg_L) == set(['-'])) or (set(seg_S) == set(['-'])):
+                continue
+                
             pos = 0
             LastNonGapPos = None
             
@@ -69,15 +71,15 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
                         S_LNG = seg_S[LastNonGapPos]
                         if (L_LNG != '-') and (S_LNG != '-'):
                             window_Score += Blossum62Score((L_LNG,S_LNG), subMat)
-                            if L_LNG == S_LNG:
-                                window_ID += 1
+                        if L_LNG == S_LNG:
+                            window_ID += 1
                     LastNonGapPos = pos #Set for the next iteration
                     
                     #Check Current Position for matches
                     if (sx != '-') and (sy != '-'):
                         window_Score += Blossum62Score((sx,sy), subMat)
-                        if sx == sy:
-                            window_ID += 1
+                    if sx == sy:
+                        window_ID += 1
                             
                     #Check for next position for matches
                     nextpos = None
@@ -93,8 +95,8 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
                         S_NP = seg_S[nextpos]
                         if (L_NP != '-') and (S_NP != '-'):
                             window_Score += Blossum62Score((L_NP,S_NP), subMat)
-                            if L_NP == S_NP:
-                                window_ID += 1
+                        if L_NP == S_NP:
+                            window_ID += 1
                     
                     #Norm by SmoothingWindow size (hardcoded 3)
                     window_ID = window_ID/windowsize
@@ -107,12 +109,19 @@ def PercentIdentityVect(aln_l, aln_s, Norm = 'L', SmoothingWindow_3 = False, sub
         for i in range(0, len(aln_l)):
             seg_L = aln_l[i]
             seg_S = aln_s[i]
+            
+            #Skip the %ID if one alignment is all gaps
+            #This would add spurious hits with gap == gaps -> 1
+            if (set(seg_L) == set(['-'])) or (set(seg_S) == set(['-'])):
+                continue
 
             pos = 0
             for sx, sy in zip(seg_L, seg_S):
+                #Check %ID
+                if sx == sy:
+                    AAPercIdentityVect[pos] += 1
+                #Check Blossum63       
                 if (sx != '-') and (sy != '-'):
-                    if sx == sy:
-                        AAPercIdentityVect[pos] += 1
                     posScore = Blossum62Score((sx,sy), subMat)
                     AAAvgScoreVect[pos] += posScore
                     #if posScore > AAMaxScoreVect[pos]:
