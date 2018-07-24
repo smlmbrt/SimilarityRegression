@@ -12,10 +12,11 @@ def Blossum62Score(pair, mat):
     except:
         import itertools
         aas = set(itertools.chain(*mat.keys()))
+        pair = list(pair)
         for i, aa in enumerate(pair):
             if aa not in aas:
                 pair[i] = 'X' #Replace with UNKNOWN AA
-        return mat[pair]
+        return mat[tuple(pair)]
 
 def AlnmtPctID(aln_x, aln_y):
     match = 0
