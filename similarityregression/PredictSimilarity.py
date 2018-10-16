@@ -106,10 +106,17 @@ def AlignAndScore_DictPairs(t, OutputClasses = ['HSim', 'Dis']):
 def SeqDictIterator_ParseIdentical2Results(d):
     results = []
     import itertools
-    for ids in d.values():
+    for pseq, ids in d.items():
+    	#1) Score similarity 
+    	try:
+			aln_result = pwsaln.AlignDBDArrays(('i', pseq), ('j', pseq))
+			aln_score = srpred.ScoreAlignmentResult(resultDict=aln_result, scoreDict=SRModel)
+    	except:
+			aln_score = ('NA', 'HSim') #Because we know they're identical
+		
         for i, j in itertools.combinations(ids, 2):
             if i < j:
-                results.append(list(i) + list(j) + [1, 'HSim'])
+                results.append(list(i) + list(j) + list(aln_score))
             else:
-                results.append(list(j) + list(i) + [1, 'HSim'])
+                results.append(list(j) + list(i) + list(aln_score))
     return(results)
