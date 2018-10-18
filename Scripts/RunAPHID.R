@@ -6,7 +6,8 @@ library(seqinr)
 
 HmmFile <- args[1]
 FaFile <- args[2]
-OutputPrefix <- args[3]
+AlnType <- args[3]
+OutputPrefix <- args[4]
 
 print('1) Reading HMM')
 hmm_HD <- readPHMM(HmmFile)
@@ -36,17 +37,24 @@ writeLikeFasta <- function(listlike, outputname){
 
 #Find Viterbi Matches
 print('3) Finding Viterbi Matches')
-print('Starting LOCAL search...')
-hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'local')
-writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_local', sep = ''))
-print('!Done LOCAL search...')
+if(AlnType == 'local'){
+	print('Starting LOCAL search...')
+	hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'local')
+	writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_local', sep = ''))
+	print('!Done LOCAL search...')
+}else if(AlnType == 'global'){
+	print('Starting GLOBAL search...')
+	hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'global')
+	writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_global', sep = ''))
+	print('!Done GLOBAL search...')
+}else if(AlnType == 'semiglobal'){
+	print('Starting SEMIGLOBAL search...')
+	hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'semiglobal')
+	writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_semiglobal', sep = ''))
+	print('!Done SEMIGLOBAL search...')
+}else{sys.exit('ERROR: Not a valid alignment type')}
 
-print('Starting GLOBAL search...')
-hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'global')
-writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_global', sep = ''))
-print('!Done GLOBAL search...')
 
-print('Starting SEMIGLOBAL search...')
-hmm_matches <- lapply(Seqs, returnViterbiResult, hmm_HD, 'semiglobal')
-writeLikeFasta(hmm_matches, paste(OutputPrefix, '.Viterbi_semiglobal', sep = ''))
-print('!Done SEMIGLOBAL search...')
+
+
+

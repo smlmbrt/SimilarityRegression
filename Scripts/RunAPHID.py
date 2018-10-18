@@ -77,6 +77,7 @@ def HMM2MaxP(filename):
 #ARGS
 HMM = sys.argv[1]
 SEQS = sys.argv[2]
+ALNTYPE = sys.argv[3]
 
 #PrepOutput
 loc_Output = 'DBDMatchPos_aphid/'
@@ -87,7 +88,7 @@ loc_RootName = loc_Output + SEQS.split('/')[-1].replace('.fa','')
 #print loc_RootName
     
 #1) Run R/Aphid Matches
-os.system('Rscript RunAPHID.R %s %s %s'%(HMM, SEQS, loc_RootName)) 
+os.system('Rscript RunAPHID.R %s %s %s %s'%(HMM, SEQS, ALNTYPE, loc_RootName)) 
 
 #2) Parse Results
 hmm_len = HMM2MaxP(HMM)
