@@ -3,12 +3,14 @@
 This is the code repositiory for Similarity Regression (SR) a method to predict motif similarity using weighted alignments. Description of the directories:
 
 * `ConstructSimilarityModels/`: jupyter notebooks used to train and select SR models. This directory contains a `README` that describes how to train SR models.
+* `Examples/` : jupyter notebook with code to read TF gene/protein information from CisBP and parse it into formats that can be used to train SR models, or score sequences using existing SR models.
+* `Scripts/` contains python scripts and R code for aligning sequences to a Pfam HMM.
 * `similarityregression/`: python module containing code to align DBDs, and score alignments using SR models.
 * `CisBP/`: scripts to calculate E-score overlaps from data present in CisBP flat files.
 
 `python` Dependancies: `numpy`, `pandas`, `biopython`, `sklearn`
 
-`R` Dependancies: `caret`, `glmnet`, `PRROC`
+`R` Dependancies: `caret`, `glmnet`, `PRROC`, `aphid`, `seqinr`
 
 ## Citation
 Samuel A. Lambert, Ally Yang, Alexander Sasse, Gwendolyn Cowley, Mark X. Caddick, Quaid D. Morris, Matthew T. Weirauch, and Timothy R. Hughes. **Similarity Regression predicts evolution of transcription factor sequence specificity**. *(In preparation)*
