@@ -1,0 +1,8 @@
+{
+    "Family_ID": "F231_1.97d", 
+    "Family_Name": "Homeodomain,POU", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": 0.22875816993500001, 
+    "Threshold.HSim": 0.99346405228799994
+}

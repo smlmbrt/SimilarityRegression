@@ -1,0 +1,8 @@
+{
+    "Family_ID": null, 
+    "Family_Name": "NO_THRESHOLD", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": 0.25, 
+    "Threshold.HSim": 0.7
+}

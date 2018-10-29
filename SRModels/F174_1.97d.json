@@ -1,0 +1,8 @@
+{
+    "Family_ID": "F174_1.97d", 
+    "Family_Name": "E2F", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": NaN, 
+    "Threshold.HSim": 0.428571428571
+}

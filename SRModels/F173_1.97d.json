@@ -1,0 +1,8 @@
+{
+    "Family_ID": "F173_1.97d", 
+    "Family_Name": "Dof", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": NaN, 
+    "Threshold.HSim": 0.50847457627100001
+}

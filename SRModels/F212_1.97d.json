@@ -1,0 +1,8 @@
+{
+    "Family_ID": "F212_1.97d", 
+    "Family_Name": "GCM", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": NaN, 
+    "Threshold.HSim": 0.60714285714299998
+}

@@ -1,0 +1,8 @@
+{
+    "Family_ID": "F282_1.97d", 
+    "Family_Name": "Pipsqueak", 
+    "Model.Class": "SequenceIdentity", 
+    "Model.Name": "PctID_L", 
+    "Threshold.Dis": 0.46511627906999997, 
+    "Threshold.HSim": 0.77777777777799995
+}
