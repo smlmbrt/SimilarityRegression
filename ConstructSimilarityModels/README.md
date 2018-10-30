@@ -1,9 +1,9 @@
-This README describes the notebooks required to parse data from CisBP into dataframes for training with R, and evaluating different SR models.
+This README describes the notebooks required to parse data from Cis-BP into dataframes for training with R, and evaluating different SR models.
 
 #### Creating SR Models:
 
 * `Create DBD alignments and training dataframes.ipynb`: This notebook shows how the motif sequences are parsed from the CisBP flat files, and split into TF families for SR model training. 
-* `SimilarityRegression_Train.R`: This Rscript takes a CisBP family ID as input and finds the relevant folder with SR training data in it. It then scales the data, and trains 4 SR models (8 if you use the smoothed data - this isn't included in the paper because the models aren't interpretable, and usually perform worse). The script generates a `Models/` folder in that contains the feature scaling (mean/sd), model coefficients, model predictions (on test and final models), PR/NPV statistics/score cutoffs, and PR curves (separated by regression and classification). There is also a helper script (`SimilarityRegression_HelperFunctions.R`) with extra functions used for model training. 
+* `SimilarityRegression_Train.R`: This Rscript takes a CisBP family ID as input and finds the relevant folder with SR training data in it. It then scales the data, and trains 4 SR models (8 if you use the smoothed data - this isn't included in the paper because the models aren't interpretable, and usually perform worse). The script generates a `Models/` folder that contains the feature scaling (mean/sd), model coefficients, model predictions (on test and final models), PR/NPV statistics/score cutoffs, and PR curves (separated by regression and classification). There is also a helper script (`SimilarityRegression_HelperFunctions.R`) with functions used for model training. 
 
 #### Selecting SR Models:
 
